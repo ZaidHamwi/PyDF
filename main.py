@@ -1,8 +1,7 @@
 import sys
 import os
 
-from PySide6 import QtWidgets
-from PySide6 import QtCore
+from PySide6 import QtWidgets, QtCore
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QIcon, QImage, QShortcut
 from PySide6.QtWidgets import QMessageBox
@@ -16,9 +15,7 @@ class Toast(QtWidgets.QWidget):
     def __init__(self, parent, message, duration=2000):
         super().__init__(parent)
 
-        self.setWindowFlags(
-            Qt.ToolTip | Qt.FramelessWindowHint
-        )
+        self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
         layout = QtWidgets.QVBoxLayout(self)
@@ -38,7 +35,6 @@ class Toast(QtWidgets.QWidget):
 
         self.adjustSize()
         self.position_to_parent()
-
         self.show()
 
         QtCore.QTimer.singleShot(duration, self.close)
@@ -50,9 +46,6 @@ class Toast(QtWidgets.QWidget):
         self.move(self.parent().mapToGlobal(QtCore.QPoint(x, y)))
 
 
-# -----------------------------
-# Page model
-# -----------------------------
 class PageItem:
     def __init__(self, source_path, page_index=None, image=None):
         self.source_path = source_path
@@ -68,6 +61,7 @@ class PagePreviewWidget(QtWidgets.QWidget):
         self.image_label = QtWidgets.QLabel(self)
         self.image_label.setPixmap(pixmap)
         self.image_label.setAlignment(Qt.AlignCenter)
+        self.image_label.setFixedSize(pixmap.size())
 
         self.overlay = QtWidgets.QLabel(f"Page {page_number}", self)
         self.overlay.setStyleSheet("""
@@ -79,13 +73,16 @@ class PagePreviewWidget(QtWidgets.QWidget):
                 font-size: 11px;
             }
         """)
-
         self.overlay.adjustSize()
-        self.resize(pixmap.size())
+
+        self.setFixedSize(pixmap.size())
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed,
+            QtWidgets.QSizePolicy.Fixed
+        )
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-
         margin = 10
         self.overlay.move(
             self.width() - self.overlay.width() - margin,
@@ -93,10 +90,6 @@ class PagePreviewWidget(QtWidgets.QWidget):
         )
 
 
-
-# -----------------------------
-# Main App
-# -----------------------------
 class App(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
@@ -115,23 +108,11 @@ class App(QtWidgets.QMainWindow):
 
         self.build_ui()
         self.connect_signals()
-        QShortcut(
-            Qt.Key_Delete,
-            self,
-            activated=self.delete_selected_page
-        )
 
-        QShortcut(
-            Qt.CTRL | Qt.Key_S,
-            self,
-            activated=self.export_pdf
-        )
+        QShortcut(Qt.Key_Delete, self, activated=self.delete_selected_page)
+        QShortcut(Qt.CTRL | Qt.Key_S, self, activated=self.export_pdf)
 
-    # -----------------------------
-    # UI
-    # -----------------------------
     def build_ui(self):
-        # LEFT: controls
         self.controls = QtWidgets.QVBoxLayout()
 
         self.btn_add = QtWidgets.QPushButton("Add PDFs / Images")
@@ -147,26 +128,27 @@ class App(QtWidgets.QMainWindow):
         self.btn_export = QtWidgets.QPushButton("Export PDF")
         self.btn_clear = QtWidgets.QPushButton("Clear")
 
-        self.controls.addWidget(self.btn_add)
-        self.controls.addWidget(self.btn_rotate_left)
-        self.controls.addWidget(self.btn_rotate_right)
-        self.controls.addSpacing(10)
-        self.controls.addWidget(self.btn_zoom_in)
-        self.controls.addWidget(self.btn_zoom_out)
-        self.controls.addWidget(self.btn_zoom_fit)
-        self.controls.addSpacing(10)
-        self.controls.addWidget(self.btn_duplicate)
-        self.controls.addWidget(self.btn_delete)
+        for w in [
+            self.btn_add,
+            self.btn_rotate_left,
+            self.btn_rotate_right,
+            self.btn_zoom_in,
+            self.btn_zoom_out,
+            self.btn_zoom_fit,
+            self.btn_duplicate,
+            self.btn_delete
+        ]:
+            self.controls.addWidget(w)
+
         self.controls.addStretch()
         self.controls.addWidget(self.btn_export)
         self.controls.addWidget(self.btn_clear)
 
-        # CENTER: preview
+        # Preview
         preview_wrapper = QtWidgets.QVBoxLayout()
-
-        self.preview_header = QtWidgets.QLabel("Export preview")
-        self.preview_header.setAlignment(Qt.AlignCenter)
-        self.preview_header.setStyleSheet("font-weight: bold; font-size: 14px;")
+        header = QtWidgets.QLabel("Export preview")
+        header.setAlignment(Qt.AlignCenter)
+        header.setStyleSheet("font-weight: bold; font-size: 14px;")
 
         self.preview_container = QtWidgets.QWidget()
         self.preview_layout = QtWidgets.QVBoxLayout(self.preview_container)
@@ -176,20 +158,19 @@ class App(QtWidgets.QMainWindow):
         self.preview_scroll.setWidgetResizable(True)
         self.preview_scroll.setWidget(self.preview_container)
 
-        preview_wrapper.addWidget(self.preview_header)
+        preview_wrapper.addWidget(header)
         preview_wrapper.addWidget(self.preview_scroll)
 
-        # RIGHT: page list
+        # Page list
         page_wrapper = QtWidgets.QVBoxLayout()
-
-        self.page_header = QtWidgets.QLabel("Page list")
-        self.page_header.setAlignment(Qt.AlignCenter)
-        self.page_header.setStyleSheet("font-weight: bold; font-size: 14px;")
+        page_header = QtWidgets.QLabel("Page list")
+        page_header.setAlignment(Qt.AlignCenter)
+        page_header.setStyleSheet("font-weight: bold; font-size: 14px;")
 
         self.page_list = QtWidgets.QListWidget()
         self.page_list.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
-        page_wrapper.addWidget(self.page_header)
+        page_wrapper.addWidget(page_header)
         page_wrapper.addWidget(self.page_list)
 
         # Loading overlay
@@ -222,9 +203,6 @@ class App(QtWidgets.QMainWindow):
         self.btn_clear.clicked.connect(self.clear_all)
         self.page_list.model().rowsMoved.connect(self.reorder_pages)
 
-    # -----------------------------
-    # Loading overlay
-    # -----------------------------
     def set_loading(self, loading: bool):
         self.loading_overlay.setVisible(loading)
         self.central.setEnabled(not loading)
@@ -252,20 +230,13 @@ class App(QtWidgets.QMainWindow):
         self.page_list.setCurrentRow(row + 1)
         self.render_full_preview()
 
-    # -----------------------------
-    # File loading
-    # -----------------------------
     def add_files(self):
         files, _ = QtWidgets.QFileDialog.getOpenFileNames(
-            self,
-            "Add PDFs or Images",
-            "",
-            "PDF & Images (*.pdf *.png *.jpg *.jpeg)"
+            self, "Add PDFs or Images", "", "PDF & Images (*.pdf *.png *.jpg *.jpeg)"
         )
 
         for path in files:
             ext = os.path.splitext(path)[1].lower()
-
             if ext == ".pdf":
                 doc = fitz.open(path)
                 for i in range(doc.page_count):
@@ -286,21 +257,32 @@ class App(QtWidgets.QMainWindow):
         self.page_list.clear()
         self.clear_preview()
 
-    # -----------------------------
-    # Delete page
-    # -----------------------------
-    def delete_selected_page(self):
+    def duplicate_selected_page(self):
         row = self.page_list.currentRow()
         if row < 0:
             return
 
+        original = self.pages[row]
+        dup = PageItem(
+            original.source_path,
+            page_index=original.page_index,
+            image=original.image
+        )
+        dup.rotation = original.rotation
+
+        self.pages.insert(row + 1, dup)
+        self.page_list.insertItem(row + 1, self.page_list.item(row).text())
+        self.page_list.setCurrentRow(row + 1)
+        self.render_full_preview()
+
+    def delete_selected_page(self):
+        row = self.page_list.currentRow()
+        if row < 0:
+            return
         del self.pages[row]
         self.page_list.takeItem(row)
         self.render_full_preview()
 
-    # -----------------------------
-    # Reordering & rotation
-    # -----------------------------
     def reorder_pages(self):
         new_pages = []
         for i in range(self.page_list.count()):
@@ -318,29 +300,22 @@ class App(QtWidgets.QMainWindow):
         self.pages = new_pages
         self.render_full_preview()
 
-    def rotate_selected(self, degrees):
+    def rotate_selected(self, deg):
         row = self.page_list.currentRow()
         if row < 0:
             return
-        self.pages[row].rotation = (self.pages[row].rotation + degrees) % 360
+        self.pages[row].rotation = (self.pages[row].rotation + deg) % 360
         self.render_full_preview()
 
-    # -----------------------------
-    # Zoom
-    # -----------------------------
     def adjust_zoom(self, factor):
         self.auto_fit = False
-        self.zoom_factor *= factor
-        self.zoom_factor = max(0.2, min(self.zoom_factor, 4.0))
+        self.zoom_factor = max(0.2, min(self.zoom_factor * factor, 4.0))
         self.render_full_preview()
 
     def fit_zoom(self):
         self.auto_fit = True
         self.render_full_preview()
 
-    # -----------------------------
-    # Preview rendering
-    # -----------------------------
     def clear_preview(self):
         while self.preview_layout.count():
             item = self.preview_layout.takeAt(0)
@@ -349,63 +324,52 @@ class App(QtWidgets.QMainWindow):
 
     def render_full_preview(self):
         self.clear_preview()
-
         if not self.pages:
             return
 
         self.set_loading(True)
 
-        try:
-            preview_width = self.preview_scroll.viewport().width() - 40
+        preview_width = self.preview_scroll.viewport().width() - 40
 
-            for page in self.pages:
-                if page.image:
-                    img = page.image.rotate(-page.rotation, expand=True)
-                    qimage = QImage(
-                        img.tobytes("raw", "RGB"),
-                        img.width,
-                        img.height,
-                        img.width * 3,
+        for i, page in enumerate(self.pages):
+            if page.image:
+                img = page.image.rotate(-page.rotation, expand=True)
+                qimage = QImage(
+                    img.tobytes("raw", "RGB"),
+                    img.width,
+                    img.height,
+                    img.width * 3,
+                    QImage.Format_RGB888
+                )
+                pixmap = QPixmap.fromImage(qimage)
+            else:
+                doc = fitz.open(page.source_path)
+                pdf_page = doc.load_page(page.page_index)
+                mat = fitz.Matrix(2, 2).prerotate(page.rotation)
+                pix = pdf_page.get_pixmap(matrix=mat)
+                pixmap = QPixmap.fromImage(
+                    QImage(
+                        pix.samples,
+                        pix.width,
+                        pix.height,
+                        pix.stride,
                         QImage.Format_RGB888
                     )
-                    pixmap = QPixmap.fromImage(qimage)
-                else:
-                    doc = fitz.open(page.source_path)
-                    pdf_page = doc.load_page(page.page_index)
-                    mat = fitz.Matrix(2, 2).prerotate(page.rotation)
-                    pix = pdf_page.get_pixmap(matrix=mat)
-                    pixmap = QPixmap.fromImage(
-                        QImage(
-                            pix.samples,
-                            pix.width,
-                            pix.height,
-                            pix.stride,
-                            QImage.Format_RGB888
-                        )
-                    )
-
-                scale = (
-                    preview_width / pixmap.width()
-                    if self.auto_fit
-                    else self.zoom_factor
                 )
 
-                pixmap = pixmap.scaled(
-                    pixmap.size() * scale,
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation
-                )
+            scale = preview_width / pixmap.width() if self.auto_fit else self.zoom_factor
+            pixmap = pixmap.scaled(
+                pixmap.size() * scale,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation
+            )
 
-                page_widget = PagePreviewWidget(pixmap, page_number=i + 1)
-                self.preview_layout.addWidget(page_widget)
+            self.preview_layout.addWidget(
+                PagePreviewWidget(pixmap, page_number=i + 1)
+            )
+            self.preview_layout.setAlignment(Qt.AlignCenter)
+        self.set_loading(False)
 
-
-        finally:
-            self.set_loading(False)
-
-    # -----------------------------
-    # Export
-    # -----------------------------
     def export_pdf(self):
         if not self.pages:
             return
@@ -415,6 +379,7 @@ class App(QtWidgets.QMainWindow):
         )
         if not path:
             return
+
         self.btn_export.setEnabled(False)
         QtWidgets.QApplication.processEvents()
 
@@ -452,10 +417,10 @@ class App(QtWidgets.QMainWindow):
             msg.setInformativeText(str(e))
             msg.exec()
 
+        finally:
+            self.btn_export.setEnabled(True)
 
-# -----------------------------
-# Entry point
-# -----------------------------
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     win = App()

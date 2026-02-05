@@ -1,14 +1,22 @@
 import sys
 import os
 
-from PySide6 import QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore, QtGui
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QIcon, QImage, QShortcut
+from PySide6.QtGui import QPixmap, QImage, QShortcut
 from PySide6.QtWidgets import QMessageBox
 
 from PIL import Image
 import fitz  # PyMuPDF
 import pypdf
+
+def resource_path(relative_path: str) -> str:
+    """
+    Get absolute path to resource, works for dev and for PyInstaller
+    """
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 
 class Toast(QtWidgets.QWidget):
@@ -100,7 +108,7 @@ class App(QtWidgets.QMainWindow):
 
         self.setWindowTitle("PyDF")
         self.setMinimumSize(1100, 650)
-        self.setWindowIcon(QIcon("embedded_images/PDF_app_icon.ico"))
+        self.setWindowIcon(QtGui.QIcon(resource_path("embedded_images/PDF_app_icon.ico")))
 
         self.central = QtWidgets.QWidget()
         self.setCentralWidget(self.central)

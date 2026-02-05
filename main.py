@@ -1,7 +1,7 @@
 import sys
 import os
 
-from PySide6 import QtWidgets, QtCore, QtGui
+from PySide6 import QtWidgets, QtGui
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QImage, QShortcut
 from PySide6.QtWidgets import QMessageBox
@@ -10,92 +10,8 @@ from PIL import Image
 import fitz  # PyMuPDF
 import pypdf
 
-def resource_path(relative_path: str) -> str:
-    """
-    Get absolute path to resource, works for dev and for PyInstaller
-    """
-    if hasattr(sys, "_MEIPASS"):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
+from common_fn import resource_path, Toast, PageItem, PagePreviewWidget
 
-
-class Toast(QtWidgets.QWidget):
-    def __init__(self, parent, message, duration=2000):
-        super().__init__(parent)
-
-        self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-
-        layout = QtWidgets.QVBoxLayout(self)
-        label = QtWidgets.QLabel(message)
-
-        label.setStyleSheet("""
-            QLabel {
-                color: white;
-                background-color: rgba(30, 30, 30, 220);
-                padding: 10px 16px;
-                border-radius: 8px;
-                font-size: 13px;
-            }
-        """)
-
-        layout.addWidget(label)
-
-        self.adjustSize()
-        self.position_to_parent()
-        self.show()
-
-        QtCore.QTimer.singleShot(duration, self.close)
-
-    def position_to_parent(self):
-        parent_rect = self.parent().rect()
-        x = parent_rect.width() - self.width() - 20
-        y = parent_rect.height() - self.height() - 20
-        self.move(self.parent().mapToGlobal(QtCore.QPoint(x, y)))
-
-
-class PageItem:
-    def __init__(self, source_path, page_index=None, image=None):
-        self.source_path = source_path
-        self.page_index = page_index
-        self.image = image
-        self.rotation = 0
-
-
-class PagePreviewWidget(QtWidgets.QWidget):
-    def __init__(self, pixmap: QPixmap, page_number: int):
-        super().__init__()
-
-        self.image_label = QtWidgets.QLabel(self)
-        self.image_label.setPixmap(pixmap)
-        self.image_label.setAlignment(Qt.AlignCenter)
-        self.image_label.setFixedSize(pixmap.size())
-
-        self.overlay = QtWidgets.QLabel(f"Page {page_number}", self)
-        self.overlay.setStyleSheet("""
-            QLabel {
-                color: white;
-                background-color: rgba(0, 0, 0, 160);
-                padding: 4px 8px;
-                border-radius: 6px;
-                font-size: 11px;
-            }
-        """)
-        self.overlay.adjustSize()
-
-        self.setFixedSize(pixmap.size())
-        self.setSizePolicy(
-            QtWidgets.QSizePolicy.Fixed,
-            QtWidgets.QSizePolicy.Fixed
-        )
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        margin = 10
-        self.overlay.move(
-            self.width() - self.overlay.width() - margin,
-            self.height() - self.overlay.height() - margin
-        )
 
 
 class App(QtWidgets.QMainWindow):
@@ -201,10 +117,6 @@ class App(QtWidgets.QMainWindow):
         self.main_layout.addLayout(preview_wrapper, 4)
         self.main_layout.addLayout(page_wrapper, 1)
 
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        self.loading_overlay.setGeometry(self.central.rect())
-
     def connect_signals(self):
         self.btn_add.clicked.connect(self.add_files)
         self.btn_rotate_left.clicked.connect(lambda: self.rotate_selected(-90))
@@ -245,6 +157,31 @@ class App(QtWidgets.QMainWindow):
         self.page_list.setCurrentRow(row + 1)
         self.render_full_preview()
 
+    ## OLD
+    # def duplicate_selected_page(self):
+    #     row = self.page_list.currentRow()
+    #     if row < 0:
+    #         return
+    #
+    #     original = self.pages[row]
+    #     dup = PageItem(
+    #         original.source_path,
+    #         page_index=original.page_index,
+    #         image=original.image
+    #     )
+    #     dup.rotation = original.rotation
+    #
+    #     self.pages.insert(row + 1, dup)
+    #     self.page_list.insertItem(row + 1, self.page_list.item(row).text())
+    #     self.page_list.setCurrentRow(row + 1)
+    #     self.render_full_preview()
+
+    def clear_all(self):
+        self.pages.clear()
+        self.page_list.clear()
+        self.clear_preview()
+
+
     def add_files(self):
         files, _ = QtWidgets.QFileDialog.getOpenFileNames(
             self, "Add PDFs or Images", "", "PDF & Images (*.pdf *.png *.jpg *.jpeg)"
@@ -265,29 +202,6 @@ class App(QtWidgets.QMainWindow):
                 self.page_list.addItem(os.path.basename(path))
 
         self.fit_zoom()
-        self.render_full_preview()
-
-    def clear_all(self):
-        self.pages.clear()
-        self.page_list.clear()
-        self.clear_preview()
-
-    def duplicate_selected_page(self):
-        row = self.page_list.currentRow()
-        if row < 0:
-            return
-
-        original = self.pages[row]
-        dup = PageItem(
-            original.source_path,
-            page_index=original.page_index,
-            image=original.image
-        )
-        dup.rotation = original.rotation
-
-        self.pages.insert(row + 1, dup)
-        self.page_list.insertItem(row + 1, self.page_list.item(row).text())
-        self.page_list.setCurrentRow(row + 1)
         self.render_full_preview()
 
     def delete_selected_page(self):

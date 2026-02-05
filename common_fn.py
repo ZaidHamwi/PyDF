@@ -75,14 +75,6 @@ class PagePreviewWidget(QtWidgets.QWidget):
             QtWidgets.QSizePolicy.Fixed
         )
 
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        margin = 10
-        self.overlay.move(
-            self.width() - self.overlay.width() - margin,
-            self.height() - self.overlay.height() - margin
-        )
-
 
 class PageItem:
     def __init__(self, source_path, page_index=None, image=None):

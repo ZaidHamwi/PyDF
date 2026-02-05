@@ -10,7 +10,7 @@ from PIL import Image
 import fitz  # PyMuPDF
 import pypdf
 
-from common_fn import resource_path, Toast, PageItem, PagePreviewWidget
+from common_fn import resource_path, Toast, PageItem, PagePreviewWidget, V_Line, H_Line
 
 
 
@@ -39,6 +39,12 @@ class App(QtWidgets.QMainWindow):
     def build_ui(self):
         self.controls = QtWidgets.QVBoxLayout()
 
+        hline1 = H_Line()
+        hline2 = H_Line()
+        hline3 = H_Line()
+        hline4 = H_Line()
+        hline5 = H_Line()
+
         self.btn_add = QtWidgets.QPushButton("Add PDFs / Images")
         self.btn_rotate_left = QtWidgets.QPushButton("Rotate ⟲")
         self.btn_rotate_right = QtWidgets.QPushButton("Rotate ⟳")
@@ -52,15 +58,18 @@ class App(QtWidgets.QMainWindow):
         self.btn_export = QtWidgets.QPushButton("Export PDF - CTRL+S")
         self.btn_clear = QtWidgets.QPushButton("Clear")
 
-
-
+        self.controls.addWidget(hline1)
         self.controls.addWidget(self.btn_add)
+        self.controls.addSpacing(10)
+        self.controls.addWidget(hline2)
         self.controls.addSpacing(10)
         self.controls.addWidget(QtWidgets.QLabel("Preview scale:"))
         self.controls.addWidget(self.btn_zoom_in)
         self.controls.addWidget(self.btn_zoom_out)
         self.controls.addWidget(self.btn_zoom_fit)
-        self.controls.addSpacing(20)
+        self.controls.addSpacing(10)
+        self.controls.addWidget(hline3)
+        self.controls.addSpacing(10)
 
         for w in [
             QtWidgets.QLabel("Edit selected page:"),
@@ -72,8 +81,10 @@ class App(QtWidgets.QMainWindow):
             self.controls.addWidget(w)
 
         self.controls.addStretch()
+        self.controls.addWidget(hline4)
         self.controls.addWidget(self.btn_export)
         self.controls.addWidget(self.btn_clear)
+        self.controls.addWidget(hline5)
 
         # Preview
         preview_wrapper = QtWidgets.QVBoxLayout()
@@ -113,9 +124,17 @@ class App(QtWidgets.QMainWindow):
         self.loading_overlay.hide()
 
         # Assemble
+        vline1 = V_Line()
+        vline2 = V_Line()
+        vline3 = V_Line()
+        vline4 = V_Line()
+        self.main_layout.addWidget(vline1)
         self.main_layout.addLayout(self.controls, 1)
+        self.main_layout.addWidget(vline2)
         self.main_layout.addLayout(preview_wrapper, 4)
+        self.main_layout.addWidget(vline3)
         self.main_layout.addLayout(page_wrapper, 1)
+        self.main_layout.addWidget(vline4)
 
     def connect_signals(self):
         self.btn_add.clicked.connect(self.add_files)

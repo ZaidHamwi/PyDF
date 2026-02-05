@@ -4,6 +4,7 @@ import sys
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QFrame
 
 
 def resizeEvent(self, event):
@@ -18,6 +19,33 @@ def resource_path(relative_path: str) -> str:
     if hasattr(sys, "_MEIPASS"):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
+
+
+class H_Line(QFrame):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)
+        self.setLineWidth(1)
+        self.setMidLineWidth(0)
+        self.setSizePolicy(
+            self.sizePolicy().horizontalPolicy(),
+            self.sizePolicy().verticalPolicy()
+        )
+
+class V_Line(QFrame):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setFrameShape(QFrame.VLine)
+        self.setFrameShadow(QFrame.Sunken)
+        self.setLineWidth(1)
+        self.setMidLineWidth(0)
+        self.setSizePolicy(
+            self.sizePolicy().horizontalPolicy(),
+            self.sizePolicy().verticalPolicy()
+        )
 
 
 class PagePreviewWidget(QtWidgets.QWidget):

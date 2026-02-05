@@ -124,17 +124,24 @@ class App(QtWidgets.QMainWindow):
         self.btn_zoom_fit = QtWidgets.QPushButton("Fit")
 
         self.btn_duplicate = QtWidgets.QPushButton("Duplicate page")
-        self.btn_delete = QtWidgets.QPushButton("Delete page")
-        self.btn_export = QtWidgets.QPushButton("Export PDF")
+        self.btn_delete = QtWidgets.QPushButton("Delete page - DEL")
+        self.btn_export = QtWidgets.QPushButton("Export PDF - CTRL+S")
         self.btn_clear = QtWidgets.QPushButton("Clear")
 
+
+
+        self.controls.addWidget(self.btn_add)
+        self.controls.addSpacing(10)
+        self.controls.addWidget(QtWidgets.QLabel("Preview scale:"))
+        self.controls.addWidget(self.btn_zoom_in)
+        self.controls.addWidget(self.btn_zoom_out)
+        self.controls.addWidget(self.btn_zoom_fit)
+        self.controls.addSpacing(20)
+
         for w in [
-            self.btn_add,
+            QtWidgets.QLabel("Edit selected page:"),
             self.btn_rotate_left,
             self.btn_rotate_right,
-            self.btn_zoom_in,
-            self.btn_zoom_out,
-            self.btn_zoom_fit,
             self.btn_duplicate,
             self.btn_delete
         ]:
@@ -163,7 +170,7 @@ class App(QtWidgets.QMainWindow):
 
         # Page list
         page_wrapper = QtWidgets.QVBoxLayout()
-        page_header = QtWidgets.QLabel("Page list")
+        page_header = QtWidgets.QLabel("Page list - Drag to reorder")
         page_header.setAlignment(Qt.AlignCenter)
         page_header.setStyleSheet("font-weight: bold; font-size: 14px;")
 
